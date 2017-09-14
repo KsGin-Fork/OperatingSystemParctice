@@ -11,7 +11,13 @@
 
 int main(int argc, const char * argv[]) {
 
+    pid_t pd = fork();
 
+    if (pd < 0) {
+        printf("error to fork");
+    }
+
+    printf("pid = %d\n" , getpid());
 
     return 0;
 }
