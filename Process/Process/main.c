@@ -23,17 +23,24 @@ int fork_example() {
 
     if(pd == 0) {
         count *= 200;
-        printf("it child process  ， pid = %d , count = %d\n" , getpid() , count);
+        printf("it child process  ， pid = %d , count = %d(%p)\n" , getpid() , count , &count);
     } else {
         count += 200;
-        printf("it father process ,  pid = %d , count = %d\n" , getpid() , count);
+        printf("it father process ,  pid = %d , count = %d(%p)\n" , getpid() , count , &count);
     }
 
     return 0;
 }
 
+//vfork
+
+int vfork_example(){
+
+}
+
 
 int main(){
     fork_example();
+    vfork_example();
     return 0;
 }
