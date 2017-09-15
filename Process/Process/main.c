@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int main(int argc, const char * argv[]) {
+//fork
+
+int fork_example() {
 
     pid_t pd = fork();
 
@@ -17,7 +19,21 @@ int main(int argc, const char * argv[]) {
         printf("error to fork");
     }
 
-    printf("pid = %d\n" , getpid());
+    int count = 100;
 
+    if(pd == 0) {
+        count *= 200;
+        printf("it child process  ， pid = %d , count = %d\n" , getpid() , count);
+    } else {
+        count += 200;
+        printf("it father process ,  pid = %d , count = %d\n" , getpid() , count);
+    }
+
+    return 0;
+}
+
+
+int main(){
+    fork_example();
     return 0;
 }
