@@ -1,4 +1,4 @@
-# Install script for directory: /Users/ksgin/Documents/Code/OSExc/ProcessExc
+# Install script for directory: /Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -35,5 +35,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/ksgin/Documents/Code/OSExc/ProcessExc/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

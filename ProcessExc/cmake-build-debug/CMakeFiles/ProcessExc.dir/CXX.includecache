@@ -6,9 +6,29 @@
 
 #IncludeRegexTransform: 
 
-/Users/ksgin/Documents/Code/OSExc/ProcessExc/main.cpp
-iostream
+/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/ForkTest.h
+cstdio
 -
 zconf.h
 -
+
+/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/ProcessControl.h
+cstdio
+-
+sys/types.h
+-
+cstdlib
+-
+csignal
+-
+cctype
+-
+zconf.h
+-
+
+/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/main.cpp
+ForkTest.h
+/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/ForkTest.h
+ProcessControl.h
+/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/ProcessControl.h
 
