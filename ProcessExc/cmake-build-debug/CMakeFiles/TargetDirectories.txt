@@ -1,3 +1,0 @@
-/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/KsGin/Documents/CxxProjects/OSExc/ProcessExc/cmake-build-debug/CMakeFiles/ProcessExc.dir

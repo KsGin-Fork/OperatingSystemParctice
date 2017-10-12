@@ -1,6 +1,6 @@
 /*
  * File   : ForkTest
- * Author : KsGin 
+ * Author : KsGin
  * Date   : 2017/10/10
  */
 
@@ -14,7 +14,6 @@
 int fork1();
 int fork2();
 int fork3();
-
 
 
 
