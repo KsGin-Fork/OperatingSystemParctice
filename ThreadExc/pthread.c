@@ -38,8 +38,6 @@ int main(int argc, char *argv[]) {
 }
 
 void *thread_worker(void *p) {
-
-
     int thread_num = (int)p;
     for (;;) {
         pthread_mutex_lock(&pmt); //子线程锁
