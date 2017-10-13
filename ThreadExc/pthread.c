@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     }
     do {
         unsigned long long sum = 0;
-        pthread_mutex_lock(&pmt); //主线程锁
+        pthread_mutex_lock(&pmt);  //主线程锁
         for (i = 0; i < MAX_THREAD; i++) {
             sum += counter[i];
             printf("第%d个线程的计数值 = %llu \t", i+1 , counter[i]);
@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
     } while ((ch = getchar()) != 'q');
     return 0;
 }
+
 
 void *thread_worker(void *p) {
     int thread_num = (int)p;
