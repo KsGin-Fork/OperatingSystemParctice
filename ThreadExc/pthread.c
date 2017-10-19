@@ -15,7 +15,7 @@ void *thread_worker(void *);
 int main(int argc, char *argv[]) {
     int i,ch;
 
-    pthread_mutex_init(&pmt , NULL);
+    pthread_mutex_init(&pmt , PTHREAD_MUTEX_NORMAL);
 
     pthread_t pthread_id[MAX_THREAD] = {0};
     for (i = 0; i < MAX_THREAD; i++) {
