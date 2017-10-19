@@ -3,8 +3,6 @@
  *  Date  : 2017/10/19
  */
 
-
-
 #include<stdio.h>
 #include<sys/types.h>
 #include<unistd.h>
