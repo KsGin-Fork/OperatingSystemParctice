@@ -15,6 +15,8 @@ pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER; //初始化锁
 
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 
+
+pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
 void* thread_worker(void*); //thread worker 函数
 
 void critical_section(int thread_num , int i);
@@ -30,25 +32,29 @@ int main(int argc , char* argv[]){
     };
 
     for (int i = 0; i < LOOP_TIMES; ++i) {
+       // pthread_mutex_lock(&mutex3);
         pthread_mutex_lock(&mutex1);
         pthread_mutex_lock(&mutex2);
         critical_section(1 , i);
-        pthread_mutex_unlock(&mutex2);
         pthread_mutex_unlock(&mutex1);
+        pthread_mutex_unlock(&mutex2);
+        //pthread_mutex_unlock(&mutex3);
     }
 
     pthread_mutex_destroy(&mutex1);
     pthread_mutex_destroy(&mutex2);
-
+    pthread_mutex_destroy(&mutex3);
     return 0;
 }
 
 
 void* thread_worker(void* p){
     for (int i = 0; i < LOOP_TIMES; ++i) {
-        pthread_mutex_lock(&mutex1);   //dead lock
+        //pthread_mutex_lock(&mutex3);   //dead lock
+        pthread_mutex_lock(&mutex1);
         pthread_mutex_lock(&mutex2);
         critical_section(2 , i);
+        //pthread_mutex_unlock(&mutex3);
         pthread_mutex_unlock(&mutex2);
         pthread_mutex_unlock(&mutex1);
     }
