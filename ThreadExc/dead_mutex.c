@@ -51,7 +51,7 @@ int main(int argc , char* argv[]){
 void* thread_worker(void* p){
     for (int i = 0; i < LOOP_TIMES; ++i) {
         //pthread_mutex_lock(&mutex3);   //dead lock
-        pthread_mutex_lock(&mutex1);
+        pthread_mutex_lock(&mutex2);
         pthread_mutex_lock(&mutex2);
         critical_section(2 , i);
         //pthread_mutex_unlock(&mutex3);

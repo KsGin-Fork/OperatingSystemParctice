@@ -1,17 +1,17 @@
 /*
  * File   : ProcessControl
- * Author : KsGin 
+ * Author : KsGin
  * Date   : 2017/10/10
  */
 
 #ifndef PROCESSEXC_PROCESSCONTROL_H
 #define PROCESSEXC_PROCESSCONTROL_H
 
-#include <cstdio>
+#include <stdio.h>
 #include <sys/types.h>
-#include <cstdlib>
-#include <csignal>
-#include <cctype>
+#include <stdlib.h>
+#include <signal.h>
+#include <ctype.h>
 #include <zconf.h>
 #define MAX_CHILD_NUMBER 10
 
@@ -21,14 +21,14 @@
 int proc_number=0; /*子进程的自编号，从0开始*/
 
 void do_something() {
-    while(true)  {
+    while(1)  {
         printf("This is process No.%d and its pid is %d\n", proc_number,  getpid());
         sleep(SLEEP_INTERVAL);
     }
 }
 
 
-void ProcessControlTest(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
 
     int child_proc_number = MAX_CHILD_NUMBER;  /* 子进程个数 */
     int i, ch;
