@@ -14,42 +14,44 @@ struct free_block_type *init_free_block(int mem_size) {
         return NULL;
     }
 
-    fb->size = mem_size;
+    //设置初始化空闲内存块的信息
+    fb->size = DEFAULT_MEM_SIZE;
     fb->start_addr = DEFAULT_MEM_START;
     fb->next = NULL;
+    
     return fb;
 }
 
 /*设置内存的大小*/
-int set_mem_size() {
+int set_mem_size(struct free_block_type* free_block , int *mem_size , int *flag) {
     int size;
-    if (flag) {
+    if (*flag) {
         printf("Cannot set memory size again\n");
         return 0;
     }
     printf("Total memory size = ");
     scanf("%d", &size);
     if (size > 0) {
-        mem_size = size;
-        free_block->size = mem_size;
+        *mem_size = size;
+        free_block->size = *mem_size;
     }
-    flag = 1;
+    *flag = 1;
     return 1;
 }
 
 
 /*设置分配算法*/
-void set_algorithm() {
+void set_algorithm(int *ma_algorithm) {
     int algorithm;
     printf("\t1 - Frist Fit \n");
     printf("\t2 - Best Fit \n");
     printf("\t3 - Worst Fit\n");
     scanf("%d", &algorithm);
     if (algorithm >= 1 && algorithm <= 3) {
-        ma_algorithm = algorithm;
+        *ma_algorithm = algorithm;
     }
     //指定算法
-    rearrange(ma_algorithm);
+    rearrange(*ma_algorithm);
 }
 
 /*设置指定算法*/
@@ -85,18 +87,18 @@ void rearrange_WF() {
 }
 
 /*创建新的进程,主要是获取内存的申请数量*/
-int new_process() {
+int new_process(int *pid , struct free_block_type* free_block , struct allocated_block* allocated_block_head) {
     struct allocated_block *ab = (struct allocated_block *) malloc(sizeof(struct allocated_block));
     int size, ret;
     if (!ab) exit(-5);
     ab->next = NULL;
-    pid++;
-    sprintf(ab->process_name, "PROCESS-%02d", pid);
-    ab->pid = pid;
+    (*pid)++;
+    sprintf(ab->process_name, "PROCESS-%02d", *pid);
+    ab->pid = *pid;
     printf("Memory for %s:", ab->process_name);
     scanf("%d", &size);
     if (size > 0) ab->size = size;
-    ret = allocate_mem(ab); //从空闲区分配内存 ret==1表示OK
+    ret = allocate_mem(ab , free_block); //从空闲区分配内存 ret==1表示OK
 
     //如果此时allocated_block_head尚未赋值 ， 则赋值给他
     if ((ret == 1) && (allocated_block_head == NULL)) {
@@ -116,7 +118,15 @@ int new_process() {
 }
 
 /*分配内存模块*/
-int allocate_mem(struct allocated_block *ab){
+int allocate_mem(struct allocated_block *ab, struct free_block_type* free_block){
+    
+    //根据当前算法在空闲分区链表中搜索合适空闲分区进行分配，分配时注意以下情况：
+    // 1. 找到可满足空闲分区且分配后剩余空间足够大，则分割
+    // 2. 找到可满足空闲分区且但分配后剩余空间比较小，则一起分配
+    // 3. 找不可满足需要的空闲分区但空闲分区之和能满足需要，则采用内存紧缩技术，进行空闲分区的合并，然后再分配
+    // 4. 在成功分配内存后，应保持空闲分区按照相应算法有序
+    // 5. 分配成功则返回1，否则返回-1
+    
     struct free_block_type *fpt , *pre;
     int request_size = ab->size;
     fpt = pre = free_block;
@@ -127,20 +137,20 @@ int allocate_mem(struct allocated_block *ab){
 }
 
 /*删除进程，归还分配的存储空间，并删除描述该进程内存分配的节点*/
-void kill_process(){
+void kill_process(int ma_algorithm , struct allocated_block *allocated_block_head){
     struct allocated_block *ab;
     int pid;
     printf("Kill Process , pid = ");
     scanf("%d" , &pid);
-    ab = find_process(pid);
+    ab = find_process(pid , allocated_block_head);
     if(ab){
-        free_mem(ab); /*释放ab所表示的分配区*/
-        dispose(ab); /*释放ab数据结构节点*/
+        free_mem(ab , ma_algorithm); /*释放ab所表示的分配区*/
+        dispose(ab , allocated_block_head); /*释放ab数据结构节点*/
     }
 }
 
 /*将ab所表示的已分配区归还,并进行可能的合并*/
-int free_mem(struct allocated_block *ab){
+int free_mem(struct allocated_block *ab, int ma_algorithm){
     int algorithm = ma_algorithm;
 
     struct free_block_type *fpt , *pre , *work;
@@ -153,7 +163,7 @@ int free_mem(struct allocated_block *ab){
 }
 
 /*释放数据结构节点*/
-int dispose(struct allocated_block *free_ab){
+int dispose(struct allocated_block *free_ab , struct allocated_block *allocated_block_head){
     struct allocated_block *pre , *ab;
     if (free_ab == allocated_block_head) { //释放第一个节点
         allocated_block_head = allocated_block_head->next;
@@ -172,7 +182,7 @@ int dispose(struct allocated_block *free_ab){
 }
 
 /*显示当前的内存使用情况*/
-int display_mem_usage(void){
+int display_mem_usage(struct free_block_type* free_block , struct allocated_block* allocated_block_head){
     struct free_block_type *fpt = free_block;
     struct allocated_block *ab = allocated_block_head;
     if(fpt == NULL) return -1;
@@ -198,8 +208,15 @@ int display_mem_usage(void){
 }
 
 /*根据pid寻找进程*/
-struct allocated_block* find_process(int pid){
-    return NULL;
+struct allocated_block* find_process(int pid  , struct allocated_block *allocated_block_head){
+    struct allocated_block *p = allocated_block_head;
+    while(p)
+    {
+        if(p->pid==pid)
+            return p;
+        p=p->next;
+    }
+    return p;
 }
 
 /*显示菜单*/

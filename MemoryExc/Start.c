@@ -9,31 +9,35 @@
 #include "MemoryExc.h"
 
 int main(int argc , char** argv) {
-    char choice;
-    pid = 0;
-    free_block = init_free_block(mem_size);
+    
+    int flag = 0;
+    int pid = 0;
+    int mem_size = DEFAULT_MEM_SIZE;
+    int ma_algorithm = MA_FF;
+    struct free_block_type* free_block = init_free_block(mem_size);
+    struct allocated_block* allocated_block_head = NULL;
+    
     while (1) {
         display_menu();
         fflush(stdin);
-        choice = getchar();
-        switch (choice) {
+        switch (getchar()) {
             case '1':
-                set_mem_size();
+                set_mem_size(free_block , &mem_size , &flag);
                 break;
             case '2':
-                set_algorithm();
+                set_algorithm(&ma_algorithm);
                 flag = 1;
                 break;
             case '3':
-                new_process();
+                new_process(&pid , free_block , allocated_block_head);
                 flag = 1;
                 break;
             case '4':
-                kill_process();
+                kill_process(ma_algorithm , allocated_block_head);
                 flag = 1;
                 break;
             case '5':
-                display_mem_usage();
+                display_mem_usage(free_block , allocated_block_head);
                 flag = 1;
                 break;
             default:
