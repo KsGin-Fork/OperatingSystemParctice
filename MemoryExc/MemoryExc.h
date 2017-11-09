@@ -13,25 +13,22 @@
 
 /*---------------------函数区--------------------------------*/
 struct free_block_type* init_free_block(int);
-int set_mem_size(struct free_block_type* free_block , int *mem_size, int *flag);
-void set_algorithm(int *ma_algorithm);
-void rearrange(int);
-void rearrange_WF(void);
-void rearrange_FF(void);
-void rearrange_BF(void);
-int new_process(int *pid, struct free_block_type** free_block , struct allocated_block** allocated_block_head ,int* mem_size);
-int allocate_mem(struct allocated_block*ab , struct free_block_type** free_block ,int* mem_size, struct allocated_block** allocated_block_head , int *pid);
-void kill_process(int ma_algorithm , struct allocated_block *allocated_block_head , int* mem_size, struct free_block_type** free_block);
-int free_mem(struct allocated_block *ab, int ma_algorithm , int* mem_size, struct free_block_type** free_block);
-int dispose(struct allocated_block*ab , struct allocated_block *allocated_block_head);
-int display_mem_usage(struct free_block_type* free_block , struct allocated_block* allocated_block_head);
+int set_mem_size(struct free_block_type*, int*, int*);
+void set_algorithm(int* , struct free_block_type**);
+void rearrange(int , struct free_block_type**);
+void rearrange_WF(struct free_block_type**);
+void rearrange_FF(struct free_block_type**);
+void rearrange_BF(struct free_block_type**);
+int new_process(int*, struct free_block_type**,struct allocated_block**,int*);
+int allocate_mem(struct allocated_block*, struct free_block_type**,int*, struct allocated_block**, int*);
+void kill_process(int, struct allocated_block**, int*, struct free_block_type**);
+int free_mem(struct allocated_block *, int, int*, struct free_block_type**);
+int dispose(struct allocated_block*, struct allocated_block**);
+int display_mem_usage(struct free_block_type*, struct allocated_block*);
 void display_menu(void);
-struct allocated_block* find_process(int pid , struct allocated_block *allocated_block_head);
-//内存紧缩处理
-void free_memory_rearrage(int memory_reduce_size,int allocated_size ,
-                          struct free_block_type** free_block ,
-                          int* mem_size , int* pid,
-                          struct allocated_block** allocated_block_head);
+struct allocated_block* find_process(int, struct allocated_block*);
+void free_memory_rearrage(int,int,struct free_block_type**,int*, int*,struct allocated_block**);
+void do_exit(struct free_block_type**, struct allocated_block**);
 /*-----------------------------------------------------------*/
 
 

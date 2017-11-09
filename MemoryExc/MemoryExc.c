@@ -41,7 +41,7 @@ int set_mem_size(struct free_block_type* free_block , int *mem_size , int *flag)
 
 
 /*设置分配算法*/
-void set_algorithm(int *ma_algorithm) {
+void set_algorithm(int *ma_algorithm , struct free_block_type** free_block) {
     int algorithm;
     printf("\t1 - Frist Fit \n");
     printf("\t2 - Best Fit \n");
@@ -51,20 +51,20 @@ void set_algorithm(int *ma_algorithm) {
         *ma_algorithm = algorithm;
     }
     //指定算法
-    rearrange(*ma_algorithm);
+    rearrange(*ma_algorithm , free_block);
 }
 
 /*设置指定算法*/
-void rearrange(int algorithm) {
+void rearrange(int algorithm , struct free_block_type** free_block) {
     switch (algorithm) {
         case MA_FF:
-            rearrange_FF();
+            rearrange_FF(free_block);
             break;
         case MA_BF:
-            rearrange_BF();
+            rearrange_BF(free_block);
             break;
         case MA_WF:
-            rearrange_WF();
+            rearrange_WF(free_block);
             break;
         default:break;
     }
@@ -72,18 +72,84 @@ void rearrange(int algorithm) {
 
 
 /*按照FF算法（最先适配法）*/
-void rearrange_FF() {
-
+/*将其按照地址顺序排序*/
+void rearrange_FF(struct free_block_type** free_block) {
+    //只有一个或者没有内存块的时候不需要排序
+    struct free_block_type* fpt = *free_block;
+    if (!fpt) return;
+    struct free_block_type* net = fpt;
+    if (!net) return;
+    
+    //根据内存大小排序
+    while (fpt->next) {
+        while (net->next) {
+            if (net->next->start_addr < net->start_addr) {
+                int tmp = net->size;
+                net->size = net->next->size;
+                net->next->size = tmp;
+                
+                tmp = net->start_addr;
+                net->start_addr = net->next->start_addr;
+                net->next->start_addr = tmp;
+            }
+            net = net->next;
+        }
+        fpt = fpt->next;
+        net = *free_block;
+    }
 }
 
 /*按照BF算法（最佳适配法）*/
-void rearrange_BF() {
+void rearrange_BF(struct free_block_type** free_block) {
+    //只有一个或者没有内存块的时候不需要排序
+    struct free_block_type* fpt = *free_block;
+    if (!fpt) return;
+    struct free_block_type* net = fpt;
+    if (!net) return;
 
+    //根据内存大小排序
+    while (fpt->next) {
+        while (net->next) {
+            if (net->next->size < net->size) {
+                int tmp = net->size;
+                net->size = net->next->size;
+                net->next->size = tmp;
+                
+                tmp = net->start_addr;
+                net->start_addr = net->next->start_addr;
+                net->next->start_addr = tmp;
+            }
+            net = net->next;
+        }
+        fpt = fpt->next;
+        net = *free_block;
+    }
 }
 
 /*按照WF算法（最坏适配法）*/
-void rearrange_WF() {
-
+void rearrange_WF(struct free_block_type** free_block) {
+    //只有一个或者没有内存块的时候不需要排序
+    struct free_block_type* fpt = *free_block;
+    if (!fpt) return;
+    struct free_block_type* net = fpt;
+    if (!net) return;
+    
+    //根据内存大小排序
+    while (fpt->next) {
+        while (net->next) {
+            if (net->next->size > net->size) {
+                int tmp = net->size;
+                net->size = net->next->size;
+                net->next->size = tmp;
+                tmp = net->start_addr;
+                net->start_addr = net->next->start_addr;
+                net->next->start_addr = tmp;
+            }
+            net = net->next;
+        }
+        fpt = fpt->next;
+        net = *free_block;
+    }
 }
 
 /*创建新的进程,主要是获取内存的申请数量*/
@@ -175,12 +241,12 @@ int allocate_mem(struct allocated_block *ab, struct free_block_type** free_block
 }
 
 /*删除进程，归还分配的存储空间，并删除描述该进程内存分配的节点*/
-void kill_process(int ma_algorithm , struct allocated_block *allocated_block_head , int* mem_size, struct free_block_type** free_block){
+void kill_process(int ma_algorithm , struct allocated_block **allocated_block_head , int* mem_size, struct free_block_type** free_block){
     struct allocated_block *ab;
     int pid;
     printf("Kill Process , pid = ");
     scanf("%d" , &pid);
-    ab = find_process(pid , allocated_block_head);
+    ab = find_process(pid , *allocated_block_head);
     if(ab){
         free_mem(ab , ma_algorithm , mem_size , free_block); /*释放ab所表示的分配区*/
         dispose(ab , allocated_block_head); /*释放ab数据结构节点*/
@@ -202,10 +268,15 @@ int free_mem(struct allocated_block *ab, int ma_algorithm , int* mem_size , stru
     fpt->next = NULL;
     
     //按FF分配
-    rearrange(MA_FF);
+    rearrange(MA_FF , free_block);
     
     pre = NULL;
     work = *free_block;
+    
+    if (!work) {
+        *free_block = fpt;
+        return 1;
+    }
     
     //插入空闲链表头部
     if(fpt->start_addr < work->start_addr){
@@ -216,7 +287,7 @@ int free_mem(struct allocated_block *ab, int ma_algorithm , int* mem_size , stru
             *free_block = fpt;
             work = fpt->next;
             if (fpt->start_addr + fpt->size == work->start_addr) { //如果两块地址相连，则合并
-                fpt->size = work->size;
+                fpt->size += work->size;
                 fpt->next = work->next;
                 free(work);
             }
@@ -258,20 +329,20 @@ int free_mem(struct allocated_block *ab, int ma_algorithm , int* mem_size , stru
         
     }
     
-    rearrange(ma_algorithm); //按照所选算法分配
+    rearrange(ma_algorithm , free_block); //按照所选算法分配
     return 1;
 }
 
 /*释放数据结构节点*/
-int dispose(struct allocated_block *free_ab , struct allocated_block *allocated_block_head){
+int dispose(struct allocated_block *free_ab , struct allocated_block **allocated_block_head){
     struct allocated_block *pre , *ab;
-    if (free_ab == allocated_block_head) { //释放第一个节点
-        allocated_block_head = allocated_block_head->next;
+    if (free_ab == *allocated_block_head) { //释放第一个节点
+        *allocated_block_head = (*allocated_block_head)->next;
         free(free_ab);
         return 1;
     }
-    pre = allocated_block_head;
-    ab = allocated_block_head->next;
+    pre = *allocated_block_head;
+    ab = (*allocated_block_head)->next;
     while (ab != free_ab) {
         pre = ab;
         ab = ab->next;
@@ -298,7 +369,7 @@ int display_mem_usage(struct free_block_type* free_block , struct allocated_bloc
     
     /*显示已分配区*/
     printf("\nUsed Memory:\n");
-    printf("%10s %20s %10s %10s\n" , "   Pid" , "     Process Name" , "start_addr" , "size");
+    printf("%10s %20s %10s %10s\n" , "Pid" , "Process Name" , "          start_addr" , "size");
     while (ab) {
         printf("%10d %20s %10d %10d\n" , ab->pid , ab->process_name , ab->start_addr , ab->size);
         ab = ab->next;
@@ -331,6 +402,7 @@ void display_menu(){
 }
 
 //内存紧缩处理
+/*内存紧缩：将各个占用分区向内存一端移动，然后将各个空闲分区合并成为一个空闲分区。*/
 void free_memory_rearrage(int memory_reduce_size,int allocated_size ,
                           struct free_block_type** free_block ,
                           int* mem_size , int* pid,
@@ -376,5 +448,30 @@ void free_memory_rearrage(int memory_reduce_size,int allocated_size ,
         a2->start_addr=a1->start_addr+a1->size;
         a1=a2;
         a2=a2->next;
+    }
+}
+
+void do_exit(struct free_block_type** free_block , struct allocated_block** allocated_block_head){
+    struct free_block_type *p1,*p2;
+    struct allocated_block *a1,*a2;
+    p1=*free_block;
+    if(p1!=NULL)
+    {
+        p2=p1->next;
+        for(;p2!=NULL;p1=p2,p2=p2->next)
+        {
+            free(p1);
+        }
+        free(p1);
+    }
+    a1=*allocated_block_head;
+    if(a1!=NULL)
+    {
+        a2=a1->next;
+        for(;a2!=NULL;a1=a2,a2=a2->next)
+        {
+            free(a1);
+        }
+        free(a1);
     }
 }

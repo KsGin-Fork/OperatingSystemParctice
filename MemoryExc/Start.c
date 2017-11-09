@@ -27,7 +27,7 @@ int main(int argc , char** argv) {
                 set_mem_size(free_block , &mem_size , &flag);
                 break;
             case 2:
-                set_algorithm(&ma_algorithm);
+                set_algorithm(&ma_algorithm , &free_block);
                 flag = 1;
                 break;
             case 3:
@@ -35,7 +35,7 @@ int main(int argc , char** argv) {
                 flag = 1;
                 break;
             case 4:
-                kill_process(ma_algorithm , allocated_block_head , &mem_size , &free_block);
+                kill_process(ma_algorithm , &allocated_block_head , &mem_size , &free_block);
                 flag = 1;
                 break;
             case 5:
@@ -43,6 +43,7 @@ int main(int argc , char** argv) {
                 flag = 1;
                 break;
             default:
+                do_exit(&free_block, &allocated_block_head);
                 exit(0);
                 break;
         }
