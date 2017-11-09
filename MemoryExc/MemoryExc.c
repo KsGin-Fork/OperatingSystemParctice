@@ -71,25 +71,26 @@ void rearrange(int algorithm) {
 }
 
 
-/*按照FF算法*/
+/*按照FF算法（最先适配法）*/
 void rearrange_FF() {
 
 }
 
-/*按照BF算法*/
+/*按照BF算法（最佳适配法）*/
 void rearrange_BF() {
 
 }
 
-/*按照WF算法*/
+/*按照WF算法（最坏适配法）*/
 void rearrange_WF() {
 
 }
 
 /*创建新的进程,主要是获取内存的申请数量*/
-int new_process(int *pid , struct free_block_type* free_block , struct allocated_block* allocated_block_head) {
+int new_process(int *pid , struct free_block_type** free_block ,
+                struct allocated_block** allocated_block_head ,int* mem_size) {
     struct allocated_block *ab = (struct allocated_block *) malloc(sizeof(struct allocated_block));
-    int size, ret;
+    int size;
     if (!ab) exit(-5);
     ab->next = NULL;
     (*pid)++;
@@ -98,15 +99,15 @@ int new_process(int *pid , struct free_block_type* free_block , struct allocated
     printf("Memory for %s:", ab->process_name);
     scanf("%d", &size);
     if (size > 0) ab->size = size;
-    ret = allocate_mem(ab , free_block); //从空闲区分配内存 ret==1表示OK
+    int ret = allocate_mem(ab , free_block , mem_size , allocated_block_head , pid); //从空闲区分配内存 ret==1表示OK
 
     //如果此时allocated_block_head尚未赋值 ， 则赋值给他
-    if ((ret == 1) && (allocated_block_head == NULL)) {
-        allocated_block_head = ab;
+    if ((ret == 1) && (*allocated_block_head == NULL)) {
+        *allocated_block_head = ab;
         return 1;
     } else if (ret == 1) {
-        ab->next = allocated_block_head;
-        allocated_block_head = ab;
+        ab->next = *allocated_block_head;
+        *allocated_block_head = ab;
         return 2;
     } else if(ret == -1){
         printf("Allocation fail\n");
@@ -118,7 +119,7 @@ int new_process(int *pid , struct free_block_type* free_block , struct allocated
 }
 
 /*分配内存模块*/
-int allocate_mem(struct allocated_block *ab, struct free_block_type* free_block){
+int allocate_mem(struct allocated_block *ab, struct free_block_type** free_block , int *mem_size , struct allocated_block** allocated_block_head , int *pid){
     
     //根据当前算法在空闲分区链表中搜索合适空闲分区进行分配，分配时注意以下情况：
     // 1. 找到可满足空闲分区且分配后剩余空间足够大，则分割
@@ -129,36 +130,135 @@ int allocate_mem(struct allocated_block *ab, struct free_block_type* free_block)
     
     struct free_block_type *fpt , *pre;
     int request_size = ab->size;
-    fpt = pre = free_block;
+    fpt = pre = *free_block;
 
     /*DO SOMETHING*/
-
-    return 1;
+    while (fpt) {
+        if (fpt->size >= request_size) { //找到可满足空闲分区
+            if (fpt->size - request_size >= MIN_SLICE) { //分配后足够大
+                
+                ab->start_addr = fpt->start_addr;
+                
+                //分割内存
+                fpt->size -= request_size;
+                fpt->start_addr += request_size;
+            } else {
+                ab->size = fpt->size;
+                ab->start_addr = fpt->start_addr;
+                
+                //修复空闲分区链表
+                if(*free_block == fpt){
+                    *free_block = fpt->next;
+                } else {
+                    pre->next = fpt->next;
+                }
+            }
+            *mem_size -= ab->size;  //减少mem_size
+            return 1;
+        }
+        pre = fpt;
+        fpt = fpt->next;
+    }
+    
+    if(!fpt){//fpt == null 表示没有找到需要的内存块，此时需要进行内存紧缩技术
+        if(*mem_size >= ab->size){
+            if(*mem_size - ab->size >= MIN_SLICE){
+                free_memory_rearrage(*mem_size-ab->size, ab->size, free_block, mem_size, pid, allocated_block_head);
+            }else {
+                free_memory_rearrage(0, ab->size, free_block, mem_size, pid, allocated_block_head);
+            }
+            return 0;
+        }
+    }
+    //没内存了
+    return -1;
 }
 
 /*删除进程，归还分配的存储空间，并删除描述该进程内存分配的节点*/
-void kill_process(int ma_algorithm , struct allocated_block *allocated_block_head){
+void kill_process(int ma_algorithm , struct allocated_block *allocated_block_head , int* mem_size, struct free_block_type** free_block){
     struct allocated_block *ab;
     int pid;
     printf("Kill Process , pid = ");
     scanf("%d" , &pid);
     ab = find_process(pid , allocated_block_head);
     if(ab){
-        free_mem(ab , ma_algorithm); /*释放ab所表示的分配区*/
+        free_mem(ab , ma_algorithm , mem_size , free_block); /*释放ab所表示的分配区*/
         dispose(ab , allocated_block_head); /*释放ab数据结构节点*/
     }
 }
 
 /*将ab所表示的已分配区归还,并进行可能的合并*/
-int free_mem(struct allocated_block *ab, int ma_algorithm){
-    int algorithm = ma_algorithm;
+int free_mem(struct allocated_block *ab, int ma_algorithm , int* mem_size , struct free_block_type** free_block){
 
     struct free_block_type *fpt , *pre , *work;
     fpt=(struct free_block_type*)malloc(sizeof(struct free_block_type));
     if(!fpt) return -1;
-
+    
     /*DO SOMETHING*/
-
+    *mem_size += ab->size; //free_mem 增加
+    
+    fpt->size = ab->size;
+    fpt->start_addr = ab->start_addr;
+    fpt->next = NULL;
+    
+    //按FF分配
+    rearrange(MA_FF);
+    
+    pre = NULL;
+    work = *free_block;
+    
+    //插入空闲链表头部
+    if(fpt->start_addr < work->start_addr){
+        if (!work) {
+            *free_block = fpt; //free_block为空时
+        }else{
+            fpt->next = *free_block;
+            *free_block = fpt;
+            work = fpt->next;
+            if (fpt->start_addr + fpt->size == work->start_addr) { //如果两块地址相连，则合并
+                fpt->size = work->size;
+                fpt->next = work->next;
+                free(work);
+            }
+        }
+    } else {
+        //查找插入位置
+        while((work!=NULL)&&(fpt->start_addr>work->start_addr))
+        {
+            pre=work;
+            work=work->next;
+        }
+        
+        if (!work) { //此时插入末尾
+            pre->next = fpt;
+            if (pre->start_addr + pre->size == fpt->start_addr) {
+                pre->size += fpt->size;
+                pre->next = NULL;
+                free(fpt);
+            }
+        } else { //找到了合适的位置，work地址大于fpt , pre地址小于fpt ,则插入两者之间
+            fpt->next = work;
+            pre->next = fpt;
+            if (pre->start_addr + pre->size == fpt->start_addr
+                && fpt->start_addr + fpt->size == work->start_addr) { //插入之后三个地址相连，合并三个区块
+                pre->size += fpt->size + work->size;
+                pre->next = work->next;
+                free(fpt);
+                free(work);
+            } else if(pre->start_addr + pre->size == fpt->start_addr){ //只与前边相连
+                pre->size += fpt->size;
+                pre->next = fpt->next;
+                free(fpt);
+            } else if(fpt->start_addr + fpt->size == work->start_addr){ //只与后边相连
+                fpt->size += work->size;
+                fpt->next = work->next;
+                free(work);
+            }
+        }
+        
+    }
+    
+    rearrange(ma_algorithm); //按照所选算法分配
     return 1;
 }
 
@@ -185,12 +285,12 @@ int dispose(struct allocated_block *free_ab , struct allocated_block *allocated_
 int display_mem_usage(struct free_block_type* free_block , struct allocated_block* allocated_block_head){
     struct free_block_type *fpt = free_block;
     struct allocated_block *ab = allocated_block_head;
-    if(fpt == NULL) return -1;
-    printf("-------------------------------------------------------");
+//    if(fpt == NULL) return -1;
+    printf("-------------------------------------------------------\n");
     
     /*显示空闲区*/
     printf("Free memory:\n");
-    printf("%20s %20s\n" , "    Start_addr" , "     size");
+    printf("%20s  %20s\n" , "             Start_addr" , "size");
     while (fpt) {
         printf("%20d %20d\n" , fpt->start_addr , fpt->size);
         fpt = fpt->next;
@@ -203,7 +303,7 @@ int display_mem_usage(struct free_block_type* free_block , struct allocated_bloc
         printf("%10d %20s %10d %10d\n" , ab->pid , ab->process_name , ab->start_addr , ab->size);
         ab = ab->next;
     }
-    printf("--------------------------------------------------------");
+    printf("--------------------------------------------------------\n");
     return 0;
 }
 
@@ -228,4 +328,53 @@ void display_menu(){
     printf("4 - Terminate a process \n");
     printf("5 - Display memory usage \n");
     printf("0 - Exit\n");
+}
+
+//内存紧缩处理
+void free_memory_rearrage(int memory_reduce_size,int allocated_size ,
+                          struct free_block_type** free_block ,
+                          int* mem_size , int* pid,
+                          struct allocated_block** allocated_block_head){
+    struct free_block_type *p1,*p2;
+    struct allocated_block *a1,*a2;
+    if(memory_reduce_size!=0) //分配完还有小块空间
+    {
+        p1=*free_block;
+        p2=p1->next;
+        
+        p1->start_addr=0;
+        p1->size=memory_reduce_size;
+        p1->next=NULL;
+        
+        *mem_size=memory_reduce_size;  //
+    }
+    else
+    {
+        p2=*free_block;
+        free_block=NULL;
+        mem_size=0;
+    }
+    while(p2!=NULL)//释放节点
+    {
+        p1=p2;
+        p2=p2->next;
+        free(p1);
+    }
+    //allocated_block 重新修改链接
+    a1=(struct allocated_block *)malloc(sizeof(struct allocated_block));
+    a1->pid=*pid;
+    a1->size=allocated_size;
+    a1->start_addr=memory_reduce_size; //已申请的开始地址，从memory_reduce_size开始
+    sprintf(a1->process_name, "PROCESS-%02d", *pid);
+    
+    a1->next=*allocated_block_head;
+    a2=*allocated_block_head;
+    *allocated_block_head=a1;
+    
+    while(a2!=NULL)
+    {
+        a2->start_addr=a1->start_addr+a1->size;
+        a1=a2;
+        a2=a2->next;
+    }
 }
